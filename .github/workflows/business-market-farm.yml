@@ -1,0 +1,65 @@
+name: CEREBRON Farm 22 Business Market
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  roles:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include:
+          - {role: MARKET_RESEARCH_SPECIALIST, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: CUSTOMER_SEGMENTATION_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: COMPETITIVE_INTELLIGENCE_SPECIALIST, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: BUSINESS_STRATEGY_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: VALUE_PROPOSITION_SPECIALIST, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: PRICING_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: GO_TO_MARKET_SPECIALIST, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: SALES_MODEL_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: CHANNEL_STRATEGY_SPECIALIST, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: PARTNERSHIP_ECOSYSTEM_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: PRODUCT_MARKET_FIT_AUDITOR, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: UNIT_ECONOMICS_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: TAM_SAM_SOM_AUDITOR, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: DEMAND_FORECAST_AUDITOR, model: huggingface-projects/gemma-2-9b-it}
+          - {role: BUSINESS_MODEL_SPECIALIST, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: COMMERCIAL_RISK_SPECIALIST, model: huggingface-projects/gemma-2-9b-it}
+          - {role: SCENARIO_PLANNER, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: RED_TEAM_MARKET_FALSIFIER, model: huggingface-projects/gemma-2-9b-it}
+          - {role: INDEPENDENT_REPLICATOR, model: huggingface-projects/llama-3.2-3B-Instruct}
+          - {role: OMEGA_BUSINESS_MARKET_JUDGE, model: huggingface-projects/gemma-2-9b-it}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -q gradio_client
+      - name: Run role
+        env:
+          ROLE: ${{ matrix.role }}
+          MODEL: ${{ matrix.model }}
+          MISSION: Analyse business/market with evidence, assumptions, uncertainty, falsification and decision conditions.
+        run: python worker/farm_worker.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: farm22-${{ matrix.role }}
+          path: results/${{ matrix.role }}.json
+          if-no-files-found: warn
+
+  omega:
+    if: always()
+    needs: roles
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          mkdir -p omega
+          printf '{"farm":22,"domain":"business-market","status":"UNREVIEWED_EXTERNAL_AGENT_OUTPUT","note":"Role outputs require review before use as evidence."}\n' > omega/omega.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: business-market-farm-22-omega-packet
+          path: omega/omega.json
